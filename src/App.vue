@@ -24,9 +24,7 @@
     <div v-on:click="guess(16)" v-bind:style="{ background: elementColors[15][1] }"></div>
     <br />
 
-    <button class="startBtn">Старт</button>
-
-    <p id="timer">00:00:000</p>
+    <button class="startBtn" v-on:click="generate()">Старт</button>
   </div>
 </template>
 
@@ -36,25 +34,49 @@ export default {
 
   data() {
     return {
-      colors: [],
-      emptyElementColor: [
-        'none',
-        'none',
-        0,
-      ],
+      // Последние два элемента, на которые кликнули
+      elementsPair: [-1, -1],
 
+      // Должна ли пара быть перекрашена в цвет по-умолчанию
+      toDissapear: false,
+
+      // Общее количество пар
+      pairsCount: 8,
+
+      // Количество оставшихся неотгаданных пар
+      pairsRemained: 8,
+
+      /**
+       * Каждый элемент - вектор из 3-ёх елементов:
+       * Первое строковое значение - угадываемый цвет
+       * Второе строковое значение - отображаемый цвет (изначально цвет по-умолчанию)
+       * Третье булево значение - скрыть ли угадываемый цвет
+       */
+      colors: [],
       elementColors: [],
     };
   },
 
   methods: {
+    /**
+     * Сгенериовать 8 случайных цветов
+     * и для каждого присвоить 1 цвет 2-ум случайно
+     * расположенным элементам
+     */
     generate() {
-      const colorsCount = 8;
+      console.log('Generated');
+      const colorsCount = this.pairsCount;
       const elementsCount = 16;
       const count = [0, 0, 0, 0, 0, 0, 0, 0];
 
+      this.pairsRemained = this.pairsCount;
+
       for (let i = 0; i < colorsCount; i += 1) {
-        this.colors.push([`#${(0x1000000 + (Math.random() * 0xFFFFFF)).toString(16).substr(1, 6)}`, 'none', 0]);
+        if (this.colors.length < colorsCount) {
+          this.colors.push([`#${(0x1000000 + (Math.random() * 0xFFFFFF)).toString(16).substr(1, 6)}`, 'none', false]);
+        } else {
+          this.colors[i] = [`#${(0x1000000 + (Math.random() * 0xFFFFFF)).toString(16).substr(1, 6)}`, 'none', false];
+        }
       }
 
       for (let i = 0; i < elementsCount; i += 1) {
@@ -64,7 +86,13 @@ export default {
         while (!isColored) {
           if (count[pickedColor] < 2) {
             const color = this.colors[pickedColor]; // Need a copy, not a reference
-            this.elementColors.push([color[0], color[1], color[0]]);
+
+            if (this.elementColors.length < elementsCount) {
+              this.elementColors.push([color[0], color[1], color[2]]);
+            } else {
+              this.elementColors[i] = [color[0], color[1], color[2]];
+            }
+
             count[pickedColor] += 1;
             isColored = 1;
           } else {
@@ -74,8 +102,60 @@ export default {
       }
     },
 
+    /**
+     * По клику если в текущий момент не отображаетс пара
+     * с временным отображением цвета, то показать цвет,
+     * иначе проверяется угадана ли пара, и, если да, то
+     * цвета остаются, иначе обратно перекрашиваются
+     *
+     * Также если неугаданных пар не осталось, то выводится
+     * сообщение
+     */
     guess(number) {
-      this.elementColors[number - 1][1] = this.elementColors[number - 1][0];
+      if (!this.toDissapear) {
+        console.log(`${number} had to show ${this.elementColors[number - 1][0]}`);
+        this.elementColors[number - 1][1] = this.elementColors[number - 1][0];
+      }
+
+      if (this.elementsPair[0] === -1) {
+        console.log('Prev set');
+        this.elementsPair[0] = number - 1;
+      } else if (this.toDissapear === false) {
+        console.log('Dissapear set');
+        this.elementsPair[1] = number - 1;
+        this.toDissapear = true;
+      } else if (this.toDissapear === true) {
+        console.log('Reset');
+
+        if (
+          (this.elementColors[this.elementsPair[0]][1]
+          === this.elementColors[this.elementsPair[1]][1])
+          && (this.elementsPair[0] !== this.elementsPair[1])
+        ) {
+          this.elementColors[this.elementsPair[0]][2] = true;
+          this.elementColors[this.elementsPair[1]][2] = true;
+          this.pairsRemained -= 1;
+        }
+
+        if (this.elementColors[this.elementsPair[0]][2] === false) {
+          this.elementColors[this.elementsPair[0]][1] = 'none';
+        }
+
+        if (this.elementColors[this.elementsPair[1]][2] === false) {
+          this.elementColors[this.elementsPair[1]][1] = 'none';
+        }
+
+        this.elementsPair[0] = -1;
+        this.elementsPair[1] = -1;
+        this.toDissapear = false;
+
+        console.log(`Pairs remained: ${this.pairsRemained}`);
+        if (this.pairsRemained === 0) {
+          alert('Вы выйграли!');
+        }
+      }
+
+      // Необходимо для отображение изменённого цвета
       this.$forceUpdate();
     },
   },
