@@ -125,7 +125,8 @@ export default {
      */
     guess(number) {
       // Пользователь решил начать игру, не нажимая кнопку
-      if (this.date === 0) {
+      if ((this.date === 0) || (this.pairsRemained === 0)) {
+        this.generate();
         this.count();
       }
 
@@ -141,36 +142,36 @@ export default {
         console.log('Dissapear set');
         this.elementsPair[1] = number - 1;
         this.toDissapear = true;
-      } else if (this.toDissapear === true) {
-        console.log('Reset');
 
-        if (
+        setTimeout(() => {
+          if (
           (this.elementColors[this.elementsPair[0]][1]
           === this.elementColors[this.elementsPair[1]][1])
           && (this.elementsPair[0] !== this.elementsPair[1])
-        ) {
-          this.elementColors[this.elementsPair[0]][2] = true;
-          this.elementColors[this.elementsPair[1]][2] = true;
-          this.pairsRemained -= 1;
-        }
+          ) {
+            this.elementColors[this.elementsPair[0]][2] = true;
+            this.elementColors[this.elementsPair[1]][2] = true;
+            this.pairsRemained -= 1;
+          }
 
-        if (this.elementColors[this.elementsPair[0]][2] === false) {
-          this.elementColors[this.elementsPair[0]][1] = 'none';
-        }
+          if (this.elementColors[this.elementsPair[0]][2] === false) {
+            this.elementColors[this.elementsPair[0]][1] = 'none';
+          }
 
-        if (this.elementColors[this.elementsPair[1]][2] === false) {
-          this.elementColors[this.elementsPair[1]][1] = 'none';
-        }
+          if (this.elementColors[this.elementsPair[1]][2] === false) {
+            this.elementColors[this.elementsPair[1]][1] = 'none';
+          }
 
-        this.elementsPair[0] = -1;
-        this.elementsPair[1] = -1;
-        this.toDissapear = false;
+          this.elementsPair[0] = -1;
+          this.elementsPair[1] = -1;
+          this.toDissapear = false;
 
-        console.log(`Pairs remained: ${this.pairsRemained}`);
-        if (this.pairsRemained === 0) {
-          alert(`Вы выйграли!\n\nЗатраченное время: ${this.time}`);
-          this.stopCount();
-        }
+          console.log(`Pairs remained: ${this.pairsRemained}`);
+          if (this.pairsRemained === 0) {
+            alert(`Вы выйграли!\n\nЗатраченное время: ${this.time}`);
+            this.stopCount();
+          }
+        }, 500);
       }
 
       // Необходимо для отображение изменённого цвета
