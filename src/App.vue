@@ -24,7 +24,9 @@
     <div v-on:click="guess(16)" v-bind:style="{ background: elementColors[15][1] }"></div>
     <br />
 
-    <button class="startBtn" v-on:click="generate()">Старт</button>
+    <p>{{ time }}</p>
+
+    <button class="startBtn" v-on:click="generate(); stopCount(); count()">Заново</button>
   </div>
 </template>
 
@@ -54,6 +56,10 @@ export default {
        */
       colors: [],
       elementColors: [],
+
+      time: '00:00.000',
+      date: 0,
+      intervalID: 0,
     };
   },
 
@@ -62,6 +68,9 @@ export default {
      * Сгенериовать 8 случайных цветов
      * и для каждого присвоить 1 цвет 2-ум случайно
      * расположенным элементам
+     *
+     * Также, если функция вызвана повторно, то
+     * вернуть все значения в изначальное состояние
      */
     generate() {
       console.log('Generated');
@@ -70,6 +79,9 @@ export default {
       const count = [0, 0, 0, 0, 0, 0, 0, 0];
 
       this.pairsRemained = this.pairsCount;
+      this.elementsPair[0] = -1;
+      this.elementsPair[1] = -1;
+      this.toDissapear = false;
 
       for (let i = 0; i < colorsCount; i += 1) {
         if (this.colors.length < colorsCount) {
@@ -103,7 +115,7 @@ export default {
     },
 
     /**
-     * По клику если в текущий момент не отображаетс пара
+     * По клику если в текущий момент не отображается пара
      * с временным отображением цвета, то показать цвет,
      * иначе проверяется угадана ли пара, и, если да, то
      * цвета остаются, иначе обратно перекрашиваются
@@ -112,6 +124,11 @@ export default {
      * сообщение
      */
     guess(number) {
+      // Пользователь решил начать игру, не нажимая кнопку
+      if (this.date === 0) {
+        this.count();
+      }
+
       if (!this.toDissapear) {
         console.log(`${number} had to show ${this.elementColors[number - 1][0]}`);
         this.elementColors[number - 1][1] = this.elementColors[number - 1][0];
@@ -151,12 +168,36 @@ export default {
 
         console.log(`Pairs remained: ${this.pairsRemained}`);
         if (this.pairsRemained === 0) {
-          alert('Вы выйграли!');
+          alert(`Вы выйграли!\n\nЗатраченное время: ${this.time}`);
+          this.stopCount();
         }
       }
 
       // Необходимо для отображение изменённого цвета
       this.$forceUpdate();
+    },
+
+    /**
+     * Подсчёт времени и его вывод
+     */
+    count() {
+      this.date = new Date();
+
+      this.intervalID = setInterval(() => {
+        const current = new Date().getTime();
+        const delta = current - this.date;
+        this.time = `${Math.floor((delta / 60000) % 60)}:${Math.floor(delta / 1000) % 60}.${delta % 1000}`;
+      }, 4);
+    },
+
+    /**
+     * Остановка запущенного цикла подсчёта времени
+     */
+    stopCount() {
+      console.log('Interval reset');
+      clearInterval(this.intervalID);
+      this.time = '00:00.000';
+      this.date = 0;
     },
   },
 
